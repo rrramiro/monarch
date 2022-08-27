@@ -3,35 +3,44 @@ package monarch.domain.service
 import monarch.domain.errors.DomainError
 import monarch.domain.models.Customer
 import monarch.domain.repository.CustomerRepository
-import zio.*
-import monarch.Environment.CustomerEnv
-import eu.timepit.refined.auto.*
+import zio._
 
-trait CustomerService:
-  def get(id: Long): RIO[CustomerRepository, Customer]
+trait CustomerService {
+  def get(id: Long): Task[Customer]
 
-  def create(customer: Customer): RIO[CustomerRepository, Long]
+  def create(customer: Customer): Task[Long]
 
-  def update(id: Long, customer: Customer): RIO[CustomerRepository, Unit]
+  def update(id: Long, customer: Customer): Task[Unit]
+}
 
-object CustomerService extends zio.Accessible[CustomerService]
+object CustomerService {
+  def get(id: Long) = ZIO.serviceWithZIO[CustomerService](_.get(id))
+
+  def create(customer: Customer) =
+    ZIO.serviceWithZIO[CustomerService](_.create(customer))
+
+  def update(id: Long, customer: Customer) =
+    ZIO.serviceWithZIO[CustomerService](_.update(id, customer))
+}
 
 case class CustomerServiceLive(repo: CustomerRepository)
-    extends CustomerService:
-  override def get(id: Long): RIO[CustomerRepository, Customer] =
+    extends CustomerService {
+  override def get(id: Long): Task[Customer] =
     repo
       .getById(id)
       .flatMap(maybeCustomer =>
-        ZIO.fromOption(maybeCustomer).mapError(_ => DomainError.CustomerNotFound(id))
+        ZIO
+          .fromOption(maybeCustomer)
+          .mapError(_ => DomainError.CustomerNotFound(id))
       )
 
-  override def create(customer: Customer): RIO[CustomerRepository, Long] =
-    repo.insert(customer).mapError(_ => UnknownError())
+  override def create(customer: Customer): Task[Long] =
+    repo.insert(customer).mapError(_ => DomainError.UnknownError)
 
   override def update(
       id: Long,
       customer: Customer
-  ): RIO[CustomerRepository, Unit] =
+  ): Task[Unit] =
     for {
       c <- get(id)
       _ <- repo
@@ -39,9 +48,11 @@ case class CustomerServiceLive(repo: CustomerRepository)
           id,
           c.copy(firstName = customer.firstName, lastName = customer.lastName)
         )
-        .mapError(_ => UnknownError())
-    } yield ZIO.unit
+        .mapError(_ => DomainError.UnknownError)
+    } yield ()
+}
 
-object CustomerServiceLive:
+object CustomerServiceLive {
   val layer: URLayer[CustomerRepository, CustomerService] =
-    (CustomerServiceLive(_)).toLayer[CustomerService]
+    ZLayer.fromZIO(ZIO.serviceWith(CustomerServiceLive(_)))
+}

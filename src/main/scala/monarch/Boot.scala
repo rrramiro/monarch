@@ -1,39 +1,33 @@
 package monarch
 
-import monarch.domain.repository.CustomerRepository
-import monarch.domain.repository.CustomerRepositoryLive
-import monarch.domain.service.CustomerService
+import monarch.domain.repository.CustomerRepositoryQuillLive
 import monarch.domain.service.CustomerServiceLive
 import monarch.http.Server
-import monarch.system.config.Config
-import monarch.system.config.ConfigLive
-import monarch.system.db.DBTransactor
-import monarch.system.db.DBTransactorLive
-import monarch.system.db.FlywayAdapterLive
-import monarch.Environment.AppEnv
-import zio.*
-
-import java.io.IOException
+import monarch.system.config.ConfigurationLive
 import monarch.system.db.FlywayAdapter
+import monarch.system.db.FlywayAdapterLive
+import monarch.system.db.DatasourceLive
+import monarch.Environment.BootEnv
+import zio._
 
-object Boot extends ZIOApp:
+object Boot extends ZIOApp {
 
-  override type Environment = AppEnv & Config & ZEnv
+  override type Environment = BootEnv
 
-  override val tag: EnvironmentTag[Environment] = EnvironmentTag[Environment]
+  override val environmentTag: EnvironmentTag[Environment] =
+    EnvironmentTag[Environment]
 
-  override def layer: ZLayer[ZIOAppArgs, Throwable, Environment] =
-    ZLayer.make[AppEnv & Config & ZEnv](
-      ZEnv.live,
-      ConfigLive.layer,
+  override val bootstrap: ZLayer[Scope, Any, Environment] =
+    ZLayer.makeSome[Scope, BootEnv](
+      ConfigurationLive.layer,
       FlywayAdapterLive.layer,
-      DBTransactorLive.layer,
-      CustomerRepositoryLive.layer,
+      DatasourceLive.layer,
+      CustomerRepositoryQuillLive.layer,
       CustomerServiceLive.layer
     )
 
-  override def run: ZIO[Environment & ZEnv & ZIOAppArgs, Any, ExitCode] =
-    Server
-      .run()
+  override def run: ZIO[Environment with Scope, Any, Any] =
+    (FlywayAdapter.migrate() *> Server.run())
       .tapError(err => ZIO.logError(err.getMessage))
       .exitCode
+}

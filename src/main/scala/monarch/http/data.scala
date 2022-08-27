@@ -1,26 +1,35 @@
 package monarch.http
 
-import cats.data.EitherNel
-
 import monarch.domain.models.Customer
-import eu.timepit.refined.auto.*
-import monarch.domain.errors.ValidationError
+import eu.timepit.refined.types.string.NonEmptyString
 
-object data:
+object data {
 
-  trait CustomerInfo:
-    val firstName: String
-    val lastName: String
+  trait CustomerInfo {
+    val firstName: NonEmptyString
+    val lastName: NonEmptyString
 
-    def toDomain: EitherNel[ValidationError, Customer] =
-      Customer.create(firstName, lastName)
+    def toDomain: Customer = Customer.create(firstName, lastName)
+  }
 
+  case class CustomerData(
+      id: Long,
+      firstName: NonEmptyString,
+      lastName: NonEmptyString
+  ) extends CustomerInfo
 
-  final case class CustomerData(id: Long, firstName: String, lastName: String) extends CustomerInfo
-    
-  final case class CreateCustomerData(firstName: String, lastName: String) extends CustomerInfo
-   
-  final case class UpdateCustomerData(firstName: String, lastName: String) extends CustomerInfo
+  case class CreateCustomerData(
+      firstName: NonEmptyString,
+      lastName: NonEmptyString
+  ) extends CustomerInfo
 
-  extension (c: Customer)
+  case class UpdateCustomerData(
+      firstName: NonEmptyString,
+      lastName: NonEmptyString
+  ) extends CustomerInfo
+
+  implicit class CustomerWrapper(c: Customer) {
     def toData: CustomerData = CustomerData(c.id, c.firstName, c.lastName)
+  }
+
+}

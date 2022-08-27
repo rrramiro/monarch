@@ -4,11 +4,11 @@ A simple crud backend integrating ZIO2 with:
 
 * Cats
 * Http4s
-* Doobie
+* Quill
 * Tapir 
 * ZIO-logging
 * Pureconfig
 * Circe
 * Flyway
-* refined
+* Refined
 

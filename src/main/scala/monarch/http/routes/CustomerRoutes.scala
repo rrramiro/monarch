@@ -2,30 +2,30 @@ package monarch.http.routes
 
 import org.http4s.HttpRoutes
 import sttp.tapir.PublicEndpoint
-import sttp.tapir.ztapir.*
-import sttp.tapir.json.circe.*
-import sttp.tapir.generic.auto.*
-import io.circe.generic.auto.*
-import sttp.tapir.server.http4s.*
-import sttp.tapir.server.http4s.ztapir.*
-import zio.*
-import zio.interop.catz.*
+import sttp.tapir.server.http4s.ztapir.ZHttp4sServerInterpreter
+import sttp.tapir.swagger.bundle.SwaggerInterpreter
+import sttp.tapir.EndpointOutput.OneOf
+import sttp.model.StatusCode
+import sttp.tapir.codec.refined._
+import sttp.tapir.ztapir._
+import sttp.tapir.json.circe._
+import sttp.tapir.generic.auto._
+import io.circe.generic.auto._
+import io.circe.refined._
+import zio._
 import monarch.domain.service.CustomerService
 import monarch.Environment.CustomerEnv
-import sttp.model.StatusCode
 import monarch.http.ErrorInfo
-import monarch.http.ErrorInfo.*
-import monarch.http.data.*
-import monarch.domain.models.Customer
-import sttp.tapir.EndpointOutput.OneOf
-import eu.timepit.refined.auto.*
+import monarch.http.ErrorInfo._
+import monarch.http.data._
+import eu.timepit.refined.auto._
 
-object CustomerRoutes:
+object CustomerRoutes {
 
   val httpErrors: OneOf[ErrorInfo, ErrorInfo] = oneOf[ErrorInfo](
-    oneOfMapping(StatusCode.InternalServerError, jsonBody[InternalServerError]),
-    oneOfMapping(StatusCode.BadRequest, jsonBody[BadRequest]),
-    oneOfMapping(StatusCode.NotFound, jsonBody[NotFound])
+    oneOfVariant(StatusCode.InternalServerError, jsonBody[InternalServerError]),
+    oneOfVariant(StatusCode.BadRequest, jsonBody[BadRequest]),
+    oneOfVariant(StatusCode.NotFound, jsonBody[NotFound])
   )
 
   val getCustomer: PublicEndpoint[Long, ErrorInfo, CustomerData, Any] =
@@ -49,50 +49,38 @@ object CustomerRoutes:
       .errorOut(httpErrors)
       .out(statusCode(StatusCode.Accepted))
 
-  // endpoints
-
   def getCustomerEndpoint: ZServerEndpoint[CustomerEnv, Any] =
     getCustomer.zServerLogic { (id: Long) =>
-      CustomerService(_.get(id)).mapBoth(e => NotFound(e.getMessage), _.toData)
+      CustomerService.get(id).mapBoth(e => NotFound(e.getMessage), _.toData)
     }
 
   def createCustomerEndpoint: ZServerEndpoint[CustomerEnv, Any] =
     createCustomer.zServerLogic { (data: CreateCustomerData) =>
-      ZIO
-        .fromEither(data.toDomain)
-        .mapError(e =>
-          BadRequest("Validation Failed", e.toList.map(_.getMessage))
-        )
-        .flatMap { c =>
-          CustomerService(_.create(c)).mapError(e => BadRequest(e.getMessage))
-        }
+      CustomerService
+        .create(data.toDomain)
+        .mapError(e => BadRequest(e.getMessage))
     }
 
   def updateCustomerEndpoint: ZServerEndpoint[CustomerEnv, Any] =
-    updateCustomer.zServerLogic { (id: Long, data: UpdateCustomerData) =>
-      ZIO
-        .fromEither(data.toDomain)
-        .mapError(e =>
-          BadRequest("Validation Failed", e.toList.map(_.getMessage))
-        )
-        .flatMap { c =>
-          CustomerService(_.update(id, c)).mapError(e =>
-            BadRequest(e.getMessage)
-          )
-        }
-
+    updateCustomer.zServerLogic { case (id: Long, data: UpdateCustomerData) =>
+      CustomerService
+        .update(id, data.toDomain)
+        .mapError(e => BadRequest(e.getMessage))
     }
 
-  // routes
   val endpoints: List[ZServerEndpoint[CustomerEnv, Any]] = List(
     getCustomerEndpoint,
     createCustomerEndpoint,
     updateCustomerEndpoint
   )
 
+  val swaggerEndpoints: List[ZServerEndpoint[CustomerEnv, Any]] =
+    SwaggerInterpreter().fromServerEndpoints(endpoints, "Monarch", "0.1.0")
+
   val routes: HttpRoutes[RIO[CustomerEnv, *]] =
     ZHttp4sServerInterpreter()
       .from(
-        endpoints
+        endpoints ++ swaggerEndpoints
       )
       .toRoutes
+}

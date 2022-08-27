@@ -1,10 +1,12 @@
 package monarch.http
 
+trait ErrorInfo extends Serializable
+object ErrorInfo {
+  case class NotFound(msg: String) extends ErrorInfo
 
-enum ErrorInfo extends Serializable:
+  case class BadRequest(msg: String, errors: List[String] = List.empty)
+      extends ErrorInfo
 
-    case NotFound(msg: String)
+  case class InternalServerError(msg: String) extends ErrorInfo
 
-    case BadRequest(msg: String, errors: List[String] = List.empty) 
-    
-    case InternalServerError(msg: String)
+}

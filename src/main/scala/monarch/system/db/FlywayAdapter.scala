@@ -1,35 +1,31 @@
 package monarch.system.db
 
-import zio.*
-import org.flywaydb.core.api.FlywayException
+import zio._
 import org.flywaydb.core.Flyway
-import monarch.system.config.Config
-import monarch.system.config.PostgresConfig
-import org.flywaydb.core.api.configuration.Configuration
-import org.flywaydb.core.api.output.MigrateResult
-import org.flywaydb.core.api.configuration.FluentConfiguration
-import eu.timepit.refined.auto.*
 
-trait FlywayAdapter:
+import javax.sql.DataSource
 
-  def migrate: IO[FlywayException, MigrateResult]
+trait FlywayAdapter {
+  def migrate(): Task[Unit]
+}
 
-object FlywayAdapter extends zio.Accessible[FlywayAdapter]
+object FlywayAdapter {
+  def migrate(): ZIO[FlywayAdapter, Throwable, Unit] =
+    ZIO.serviceWithZIO[FlywayAdapter](_.migrate())
+}
 
-
-case class FlywayAdapterLive(config: PostgresConfig) extends FlywayAdapter:
-  private def flyway: UIO[Flyway] =
-    UIO
-      .effectTotal(Flyway.configure().dataSource(config.url, config.user, config.password))
-      .map(Flyway(_))
-      
-
-  override def migrate: IO[FlywayException, MigrateResult] = 
-      flyway.map(_.migrate())
-
-      
-
-object FlywayAdapterLive:
-  def layer: URLayer[Config, FlywayAdapterLive] = ZLayer.fromZIO(
-    Config(_.dbConfig).map(FlywayAdapterLive(_))
-  )
+object FlywayAdapterLive {
+  val layer: URLayer[DataSource, FlywayAdapter] = ZLayer.fromZIO {
+    ZIO.service[DataSource].map { ds =>
+      new FlywayAdapter {
+        def migrate(): Task[Unit] = ZIO
+          .attempt(
+            new Flyway(
+              Flyway.configure().dataSource(ds)
+            ).migrate()
+          )
+          .as(())
+      }
+    }
+  }
+}
