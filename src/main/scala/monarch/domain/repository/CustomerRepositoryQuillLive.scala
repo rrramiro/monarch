@@ -31,9 +31,9 @@ object CustomerRepositoryQuillLive {
 }
 
 object SqlContext extends PostgresZioJdbcContext(SnakeCase) {
-  implicit val customerInsertMeta = insertMeta[Customer](_.id)
+  inline given InsertMeta[Customer] = insertMeta(_.id)
 
-  implicit val customerUpdateMeta = updateMeta[Customer](_.id)
+  inline given UpdateMeta[Customer] = updateMeta(_.id)
 
   implicit val nonEmptyStringMappedDecode
       : MappedEncoding[NonEmptyString, String] = MappedEncoding(
@@ -45,7 +45,7 @@ object SqlContext extends PostgresZioJdbcContext(SnakeCase) {
     RefType.applyRef[NonEmptyString].unsafeFrom(_)
   )
 
-  val customerTable = quote {
+  inline def customerTable: Quoted[EntityQuery[Customer]] = quote {
     querySchema[Customer](
       "customers",
       _.id -> "id",

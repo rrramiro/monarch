@@ -26,7 +26,7 @@ lazy val root = project
   .settings(
     name := "monarch",
     version := "0.1.0-SNAPSHOT",
-    scalaVersion := "2.13.8",
+    scalaVersion := "3.2.0",
     Compile / run / fork := true,
     scalacOptions ++= {
       CrossVersion.partialVersion(scalaVersion.value) match {

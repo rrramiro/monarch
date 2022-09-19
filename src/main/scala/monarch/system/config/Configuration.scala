@@ -1,13 +1,13 @@
 package monarch.system.config
 
 import pureconfig._
-import pureconfig.generic.auto._
+import pureconfig.generic.derivation.default._
 import zio._
 
 case class Configuration(
     httpServer: HttpServerConfig,
     dbConfig: PostgresConfig
-)
+) derives ConfigReader
 
 object ConfigurationLive {
 
