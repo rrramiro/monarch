@@ -1,12 +1,14 @@
 package monarch
 
-import monarch.system.config.Configuration
-import monarch.domain.service.CustomerService
 import monarch.domain.repository.CustomerRepository
-import monarch.system.db.FlywayAdapter
+import monarch.domain.service.CustomerService
+import monarch.system.config.DatabaseConfig
+import monarch.system.config.HttpServerConfig
+
+import javax.sql.DataSource
 
 object Environment {
   type CustomerEnv = CustomerService with CustomerRepository
-  type ServerEnv = CustomerEnv with Configuration
-  type BootEnv = ServerEnv with FlywayAdapter
+  type ServerEnv = CustomerEnv with HttpServerConfig with DatabaseConfig
+  type BootEnv = ServerEnv with DataSource
 }

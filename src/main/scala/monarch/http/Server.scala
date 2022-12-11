@@ -1,20 +1,21 @@
 package monarch.http
 
 import cats.syntax.all._
-import monarch.system.config.Configuration
+import monarch.Environment.CustomerEnv
+import monarch.Environment.ServerEnv
+import monarch.http.routes.CustomerRoutes
+import monarch.system.config.HttpServerConfig
 import org.http4s.blaze.server.BlazeServerBuilder
 import org.http4s.implicits._
+import org.http4s.server.Router
+import sttp.tapir.server.http4s.ztapir.ZHttp4sServerInterpreter
+import sttp.tapir.swagger.bundle.SwaggerInterpreter
 import zio._
 import zio.interop.catz._
-import org.http4s.server.Router
-import monarch.http.routes.CustomerRoutes
-import monarch.Environment.{ServerEnv, CustomerEnv}
-import sttp.tapir.swagger.bundle.SwaggerInterpreter
-import sttp.tapir.server.http4s.ztapir.ZHttp4sServerInterpreter
 
 object Server {
   def run(): ZIO[ServerEnv, Throwable, Unit] = for {
-    config <- ZIO.service[Configuration]
+    config <- ZIO.service[HttpServerConfig]
     swaggerRoutes = ZHttp4sServerInterpreter()
       .from(
         SwaggerInterpreter().fromServerEndpoints[RIO[CustomerEnv, *]](
@@ -28,7 +29,7 @@ object Server {
       "/" -> (CustomerRoutes.routes <+> swaggerRoutes)
     ).orNotFound
     _ <- BlazeServerBuilder[RIO[CustomerEnv, *]]
-      .bindHttp(config.httpServer.port, config.httpServer.host)
+      .bindHttp(config.port, config.host)
       .withoutBanner
       .withHttpApp(routes)
       .serve

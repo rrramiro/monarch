@@ -1,32 +1,42 @@
-val zioVersion    = "2.0.2"
-val ziologgingVersion = "2.0.1"
-val izumiReflectVersion = "2.1.3"
-val catsVersion = "2.8.0"
-val catsEffectVersion = "3.3.14"
-val fs2Version = "3.2.12"
-val shapelessVersion = "2.3.9"
-val quillVersion  = "4.4.1"
-val tapirVersion  = "1.1.0"
-val pureconfigVersion = "0.17.1"
-val kindProjectorVersion   = "0.13.2"
-val bmfVersion             = "0.3.1"
-val zioInteropCatsVersion = "3.3.0"
-val zioMockVersion = "1.0.0-RC8"
-val logbackVersion = "1.2.11"
-val http4sVersion = "0.23.15"
-val http4sServerVersion = "0.23.12"
-val refinedVersion = "0.10.1"
-val circeVersion = "0.14.3"
-val flywayVersion = "8.5.1"
-val slf4jVersion = "1.7.36"
-val postgresqlVersion = "42.2.25"
+lazy val zioVersion    = "2.0.5"
+lazy val zioLoggingVersion = "2.1.5"
+lazy val izumiReflectVersion = "2.2.2"
+lazy val catsVersion = "2.9.0"
+lazy val catsEffectVersion = "3.4.1"
+lazy val fs2Version = "3.3.0"
+lazy val shapelessVersion = "2.3.10"
+lazy val quillVersion  = "4.6.0"
+lazy val tapirVersion  = "1.2.3"
+lazy val pureconfigVersion = "0.17.2"
+lazy val kindProjectorVersion   = "0.13.2"
+lazy val bmfVersion             = "0.3.1"
+lazy val zioInteropCatsVersion = "3.3.0"
+lazy val zioMockVersion = "1.0.0-RC8"
+lazy val logbackVersion = "1.2.11"
+lazy val http4sVersion = "0.23.16"
+lazy val http4sServerVersion = "0.23.12"
+lazy val refinedVersion = "0.10.1"
+lazy val circeVersion = "0.14.3"
+lazy val flywayVersion = "8.5.1"
+lazy val slf4jVersion = "1.7.36"
+lazy val postgresqlVersion = "42.5.1"
+lazy val testContainersVersion = "1.17.6"
+lazy val testContainersScalaVersion = "0.40.12"
 
 lazy val root = project
   .in(file("."))
+  .configs(IntegrationTest)
+  .settings(
+    Defaults.itSettings,
+    inConfig(IntegrationTest)(ScalafmtPlugin.scalafmtConfigSettings),
+    scalafixConfigSettings(IntegrationTest)
+  )
   .settings(
     name := "monarch",
     version := "0.1.0-SNAPSHOT",
-    scalaVersion := "2.13.8",
+    scalaVersion := "2.13.10",
+    semanticdbEnabled := true,
+    semanticdbVersion := scalafixSemanticdb.revision,
     Compile / run / fork := true,
     scalacOptions ++= {
       CrossVersion.partialVersion(scalaVersion.value) match {
@@ -60,10 +70,11 @@ lazy val root = project
     //scalaModuleInfo ~= (_.map(_.withOverrideScalaVersion(true))),
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio" % zioVersion,
+      "dev.zio" %% "zio-managed" % zioVersion,
       "dev.zio" %% "zio-stacktracer" % zioVersion,
       "dev.zio" %% "izumi-reflect" % izumiReflectVersion,
       //"dev.zio" %% "zio-managed" % zioVersion,
-      "dev.zio" %% "zio-logging-slf4j" % ziologgingVersion,
+      "dev.zio" %% "zio-logging-slf4j" % zioLoggingVersion,
       "dev.zio" %% "zio-interop-cats" % zioInteropCatsVersion,
       "io.getquill" %% "quill-jdbc-zio" % quillVersion,
       "io.getquill" %% "quill-jdbc" % quillVersion,
@@ -85,9 +96,11 @@ lazy val root = project
       "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui" % tapirVersion,
       "com.softwaremill.sttp.tapir" %% "tapir-zio" % tapirVersion,
       "com.softwaremill.sttp.tapir" %% "tapir-refined" % tapirVersion,
-      "com.softwaremill.sttp.apispec" %% "openapi-model" % "0.2.1",
-      "com.softwaremill.sttp.model" %% "core" % "1.5.0",
-      "com.softwaremill.sttp.shared" %% "zio" % "1.3.7",
+      //"com.softwaremill.sttp.tapir" %% "tapir-sttp-client" % tapirVersion % "test,it",
+      "com.softwaremill.sttp.tapir" %% "tapir-http4s-client" % tapirVersion % "test,it",
+      "com.softwaremill.sttp.apispec" %% "openapi-model" % "0.3.1",
+      "com.softwaremill.sttp.model" %% "core" % "1.5.3",
+      "com.softwaremill.sttp.shared" %% "zio" % "1.3.12",
       "com.github.pureconfig" %% "pureconfig-core" % pureconfigVersion,
       "co.fs2" %% "fs2-core" % fs2Version,
       "co.fs2" %% "fs2-io" % fs2Version,
@@ -101,9 +114,17 @@ lazy val root = project
       "org.slf4j" % "log4j-over-slf4j" % slf4jVersion,
       "org.postgresql" % "postgresql" % postgresqlVersion,
 
-      "dev.zio" %% "zio-test" % zioVersion % "test",
-      "dev.zio" %% "zio-test-sbt" % zioVersion % "test",
-      "dev.zio" %% "zio-mock" % "1.0.0-RC8" % "test",
+      "dev.zio" %% "zio-test" % zioVersion % "test,it",
+      "dev.zio" %% "zio-test-sbt" % zioVersion % "test,it",
+      "dev.zio" %% "zio-test-magnolia" % zioVersion % "test,it",
+      //"dev.zio" %% "zio-mock" % "1.0.0-RC9" % "test,it",
+      "org.testcontainers" % "testcontainers" % testContainersVersion % "test,it",
+      "org.testcontainers" % "database-commons" % testContainersVersion % "test,it",
+      "org.testcontainers" % "postgresql" % testContainersVersion % "test,it",
+      "org.testcontainers" % "jdbc" % testContainersVersion % "test,it",
+      //"io.github.scottweaver" %% "zio-2-0-db-migration-aspect" % "0.9.0" % "test,it",
+      //"io.github.scottweaver" %% "zio-2-0-testcontainers-postgresql" % "0.9.0" % "test,it",
+      "com.dimafeng" %% "testcontainers-scala-postgresql" % testContainersScalaVersion % "test,it"
     ) ++ {
       CrossVersion.partialVersion(scalaVersion.value) match {
         case Some((2, 13)) =>
@@ -129,5 +150,7 @@ lazy val root = project
       IgnoredPackage("com.zaxxer.hikari.metrics")
     )
   )
+
+ThisBuild / scalafixDependencies ++= Seq("com.github.liancheng" %% "organize-imports" % "0.6.0")
 
 Global / onChangedBuildSource := ReloadOnSourceChanges

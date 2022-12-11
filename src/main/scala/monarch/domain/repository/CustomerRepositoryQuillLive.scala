@@ -1,9 +1,9 @@
 package monarch.domain.repository
 
-import monarch.domain.models.Customer
-import eu.timepit.refined.types.string.NonEmptyString
 import eu.timepit.refined.api._
+import eu.timepit.refined.types.string.NonEmptyString
 import io.getquill._
+import monarch.domain.models.Customer
 import zio._
 
 import java.sql.SQLException
@@ -11,7 +11,7 @@ import javax.sql.DataSource
 
 case class CustomerRepositoryQuillLive(dataSource: DataSource)
     extends CustomerRepository {
-  val env: ULayer[DataSource] = ZLayer.fromZIO(ZIO.succeed(dataSource))
+  private val env: ULayer[DataSource] = ZLayer.fromZIO(ZIO.succeed(dataSource))
 
   override def getById(id: Long): Task[Option[Customer]] =
     SqlContext.getById(id).provide(env).orDie

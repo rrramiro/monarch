@@ -1,7 +1,7 @@
 package monarch.http
 
-import monarch.domain.models.Customer
 import eu.timepit.refined.types.string.NonEmptyString
+import monarch.domain.models.Customer
 
 object data {
 

@@ -1,6 +1,6 @@
 package monarch.system.config
 
-case class PostgresConfig(
+case class DatabaseConfig(
     className: String,
     url: String,
     user: String,

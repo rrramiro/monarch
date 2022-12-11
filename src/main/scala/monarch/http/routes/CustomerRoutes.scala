@@ -1,24 +1,22 @@
 package monarch.http.routes
 
-import org.http4s.HttpRoutes
-import sttp.tapir.PublicEndpoint
-import sttp.tapir.server.http4s.ztapir.ZHttp4sServerInterpreter
-import sttp.tapir.swagger.bundle.SwaggerInterpreter
-import sttp.tapir.EndpointOutput.OneOf
-import sttp.model.StatusCode
-import sttp.tapir.codec.refined._
-import sttp.tapir.ztapir._
-import sttp.tapir.json.circe._
-import sttp.tapir.generic.auto._
 import io.circe.generic.auto._
 import io.circe.refined._
-import zio._
-import monarch.domain.service.CustomerService
 import monarch.Environment.CustomerEnv
+import monarch.domain.service.CustomerService
 import monarch.http.ErrorInfo
 import monarch.http.ErrorInfo._
 import monarch.http.data._
-import eu.timepit.refined.auto._
+import org.http4s.HttpRoutes
+import sttp.model.StatusCode
+import sttp.tapir.EndpointOutput.OneOf
+import sttp.tapir.PublicEndpoint
+import sttp.tapir.generic.auto._
+import sttp.tapir.json.circe._
+import sttp.tapir.server.http4s.ztapir.ZHttp4sServerInterpreter
+import sttp.tapir.swagger.bundle.SwaggerInterpreter
+import sttp.tapir.ztapir._
+import zio._
 
 object CustomerRoutes {
 
