@@ -23,6 +23,35 @@ lazy val postgresqlVersion = "42.5.1"
 lazy val testContainersVersion = "1.17.6"
 lazy val testContainersScalaVersion = "0.40.12"
 
+lazy val wartremoverCompileExclusions = Seq(
+  Wart.Overloading,
+  Wart.PublicInference,
+  Wart.Equals,
+  Wart.ImplicitParameter,
+  Wart.Serializable,
+  Wart.JavaSerializable,
+  Wart.DefaultArguments,
+  Wart.Var,
+  Wart.Product,
+  Wart.Any,
+  Wart.ExplicitImplicitTypes,
+  Wart.ImplicitConversion,
+  Wart.Nothing,
+  Wart.MutableDataStructures
+)
+
+lazy val wartremoverTestCompileExclusions = wartremoverCompileExclusions ++ Seq(
+  Wart.DefaultArguments,
+  Wart.Var,
+  Wart.AsInstanceOf,
+  Wart.IsInstanceOf,
+  //Wart.TraversableOps,
+  Wart.Option2Iterable,
+  Wart.JavaSerializable,
+  Wart.FinalCaseClass,
+  Wart.NonUnitStatements
+)
+
 lazy val root = project
   .in(file("."))
   .configs(IntegrationTest)
@@ -73,7 +102,6 @@ lazy val root = project
       "dev.zio" %% "zio-managed" % zioVersion,
       "dev.zio" %% "zio-stacktracer" % zioVersion,
       "dev.zio" %% "izumi-reflect" % izumiReflectVersion,
-      //"dev.zio" %% "zio-managed" % zioVersion,
       "dev.zio" %% "zio-logging-slf4j" % zioLoggingVersion,
       "dev.zio" %% "zio-interop-cats" % zioInteropCatsVersion,
       "io.getquill" %% "quill-jdbc-zio" % quillVersion,
@@ -131,7 +159,6 @@ lazy val root = project
           Seq(
             "com.chuusai" %% "shapeless" % shapelessVersion,
             "com.softwaremill.magnolia1_2" %% "magnolia" % "1.1.2",
-            "io.getquill" %% "quill-core" % quillVersion,
             "com.github.pureconfig" %% "pureconfig-generic-base" % pureconfigVersion,
             "com.github.pureconfig" %% "pureconfig-generic" % pureconfigVersion,
             compilerPlugin("com.olegpy" %% "better-monadic-for" % bmfVersion),
@@ -148,7 +175,11 @@ lazy val root = project
       IgnoredPackage("org.flywaydb.core"),
       IgnoredPackage("ch.qos.logback.core"),
       IgnoredPackage("com.zaxxer.hikari.metrics")
-    )
+    ),
+    Compile / compile / wartremoverWarnings  := Warts.all
+      .diff(wartremoverCompileExclusions),
+    Test / compile / wartremoverWarnings := Warts.all
+      .diff(wartremoverTestCompileExclusions)
   )
 
 ThisBuild / scalafixDependencies ++= Seq("com.github.liancheng" %% "organize-imports" % "0.6.0")

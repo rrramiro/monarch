@@ -11,3 +11,5 @@ addSbtPlugin("com.github.cb372" % "sbt-explicit-dependencies" % "0.2.16")
 addSbtPlugin("org.jmotor.sbt" % "sbt-dependency-updates" % "1.2.7")
 
 addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.10.4")
+
+addSbtPlugin("org.wartremover" % "sbt-wartremover" % "3.0.7")

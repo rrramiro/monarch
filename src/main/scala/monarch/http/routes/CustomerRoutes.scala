@@ -75,6 +75,8 @@ object CustomerRoutes {
   val swaggerEndpoints: List[ZServerEndpoint[CustomerEnv, Any]] =
     SwaggerInterpreter().fromServerEndpoints(endpoints, "Monarch", "0.1.0")
 
+  val swaggerRoutes = ZHttp4sServerInterpreter().from(swaggerEndpoints).toRoutes
+
   val routes: HttpRoutes[RIO[CustomerEnv, *]] =
     ZHttp4sServerInterpreter()
       .from(

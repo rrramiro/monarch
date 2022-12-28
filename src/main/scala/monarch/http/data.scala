@@ -12,18 +12,18 @@ object data {
     def toDomain: Customer = Customer.create(firstName, lastName)
   }
 
-  case class CustomerData(
+  final case class CustomerData(
       id: Long,
       firstName: NonEmptyString,
       lastName: NonEmptyString
   ) extends CustomerInfo
 
-  case class CreateCustomerData(
+  final case class CreateCustomerData(
       firstName: NonEmptyString,
       lastName: NonEmptyString
   ) extends CustomerInfo
 
-  case class UpdateCustomerData(
+  final case class UpdateCustomerData(
       firstName: NonEmptyString,
       lastName: NonEmptyString
   ) extends CustomerInfo

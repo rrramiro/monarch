@@ -2,8 +2,6 @@ package monarch
 
 import eu.timepit.refined.auto._
 import monarch.Environment.CustomerEnv
-import monarch.domain.repository.CustomerRepositoryQuillLive
-import monarch.domain.service.CustomerServiceLive
 import monarch.http.data.CreateCustomerData
 import monarch.http.routes.CustomerRoutes
 import monarch.system.db._
@@ -64,9 +62,6 @@ object HttpSpec extends ZIOSpecDefault {
     ) @@ TestAspect.beforeAll(FlywayAdapter.migrate())).provideShared(
       DbContainerLive.databaseImage(),
       DbContainerLive.layer,
-      DatasourceLive.layer,
-      Scope.default,
-      CustomerRepositoryQuillLive.layer,
-      CustomerServiceLive.layer
+      Boot.bootstrapServices
     )
 }

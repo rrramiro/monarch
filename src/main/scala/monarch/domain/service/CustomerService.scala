@@ -6,11 +6,11 @@ import monarch.domain.repository.CustomerRepository
 import zio._
 
 trait CustomerService {
-  def get(id: Long): Task[Customer]
+  def get(id: Long): IO[DomainError, Customer]
 
-  def create(customer: Customer): Task[Long]
+  def create(customer: Customer): IO[DomainError, Long]
 
-  def update(id: Long, customer: Customer): Task[Unit]
+  def update(id: Long, customer: Customer): IO[DomainError, Unit]
 }
 
 object CustomerService {
@@ -23,24 +23,24 @@ object CustomerService {
     ZIO.serviceWithZIO[CustomerService](_.update(id, customer))
 }
 
-case class CustomerServiceLive(repo: CustomerRepository)
+final case class CustomerServiceLive(repo: CustomerRepository)
     extends CustomerService {
-  override def get(id: Long): Task[Customer] =
+  override def get(id: Long): IO[DomainError, Customer] =
     repo
-      .getById(id)
+      .getById(id).mapError(_ => DomainError.UnknownError)
       .flatMap(maybeCustomer =>
         ZIO
           .fromOption(maybeCustomer)
           .mapError(_ => DomainError.CustomerNotFound(id))
       )
 
-  override def create(customer: Customer): Task[Long] =
+  override def create(customer: Customer): IO[DomainError, Long] =
     repo.insert(customer).mapError(_ => DomainError.UnknownError)
 
   override def update(
       id: Long,
       customer: Customer
-  ): Task[Unit] =
+  ): IO[DomainError, Unit] =
     for {
       c <- get(id)
       _ <- repo

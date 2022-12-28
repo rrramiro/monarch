@@ -10,9 +10,9 @@ object errors {
       extends Throwable(msg)
       with Error
   object DomainError {
-    case class CustomerNotFound(customerId: Long)
+    final case class CustomerNotFound(customerId: Long)
         extends DomainError(s"Customer with id ${customerId} was not found!")
-    case object UnknownError extends DomainError(s"Unkown Error!")
+    final case object UnknownError extends DomainError(s"Unkown Error!")
 
   }
 

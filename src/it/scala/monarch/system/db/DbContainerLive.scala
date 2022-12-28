@@ -1,7 +1,7 @@
 package monarch.system.db
 
 import com.dimafeng.testcontainers.PostgreSQLContainer
-import monarch.system.config.DatabaseConfig
+import monarch.system.db.HikariConfig
 import org.testcontainers.utility.DockerImageName
 import zio._
 
@@ -10,7 +10,7 @@ object DbContainerLive {
       imageName: String = "postgres:12-alpine"
   ): ULayer[DockerImageName] = ZLayer.succeed(DockerImageName.parse(imageName))
 
-  val layer: URLayer[DockerImageName, DatabaseConfig] =
+  val layer: URLayer[DockerImageName, HikariConfig] =
     ZLayer.scopedEnvironment {
       ZIO
         .service[DockerImageName]
@@ -21,12 +21,12 @@ object DbContainerLive {
         )
         .map(container =>
           ZEnvironment(
-            DatabaseConfig(
-              className = classOf[org.postgresql.Driver].getName,
-              url = container.jdbcUrl,
-              user = container.username,
-              password = container.password
-            )
+            new HikariConfig {
+              setDriverClassName(classOf[org.postgresql.Driver].getName)
+              setJdbcUrl(container.jdbcUrl)
+              setUsername(container.username)
+              setPassword(container.password)
+            }
           )
         )
     }
